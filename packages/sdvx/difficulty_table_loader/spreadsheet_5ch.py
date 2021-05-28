@@ -3,21 +3,20 @@ import re
 from abc import ABC
 from typing import Optional
 
-from gspread import Worksheet
-
 from packages.advanced_gspread.models import AdvancedReadOnlyWorkSheet, RGB, AdvancedReadOnlyCell
-from packages.sdvx.difficulty_table import SDVXDifficultyTable, SDVXNoteType, SDVXDifficultyClass, SDVXNoteInfo
+from packages.sdvx.difficulty_table import SDVXNoteType, SDVXDifficultyClass, SDVXNoteInfo
 from packages.sdvx.difficulty_table_loader.loader import SDVXDifficultyTableLoader
 from packages.sdvx.music import SDVXMusic
 
 
 class SDVX5chDifficultyTableLoader(SDVXDifficultyTableLoader, ABC):
-    trapped_regex = re.compile(r"【(.*)】")
+    trapped_regex = re.compile(r"【(.*)】(.*)")
     difficulty_regex = re.compile(r".*\[(.{3})].*")
-    individual_info_regex = re.compile(r".*\((.{3}～.{3})\)")
+    individual_info_regex = re.compile(r".*\((.*～.*)\)")
 
     def __init__(self, musics: list[SDVXMusic]):
         self._musics = musics
+        # check済みの組み合わせを保存
         self._checked = []
 
     def parse_music_cell(self, c: AdvancedReadOnlyCell) -> Optional[SDVXNoteInfo]:
@@ -36,12 +35,12 @@ class SDVX5chDifficultyTableLoader(SDVXDifficultyTableLoader, ABC):
         if c.background_color == RGB({"red": 0.95686275, "green": 0.8, "blue": 0.8}):
             note_type = SDVXNoteType.KNOBS
 
-        # 曲名のパース 【※Rebuilding of Paradise Lost[MXM]】
+        # 曲名のパース
         is_trapped = False
         base_name = c.value
         if match := SDVX5chDifficultyTableLoader.trapped_regex.fullmatch(base_name):
             is_trapped = True
-            base_name = match.group(1)
+            base_name = match.group(1) + match.group(2)
 
         # 難易度・指定があれば
         difficulty = None
@@ -63,6 +62,7 @@ class SDVX5chDifficultyTableLoader(SDVXDifficultyTableLoader, ABC):
 
         music = next((m for m in self._musics if base_name in m.name), None)
         if not music:
+            # ゲシュタルトパターンマッチで探しあてる。
             matcher_iter = ((
                 difflib.SequenceMatcher(None, base_name, m.name).ratio(), m
             ) for m in self._musics)
@@ -78,6 +78,9 @@ class SDVX5chDifficultyTableLoader(SDVXDifficultyTableLoader, ABC):
             [note] = music.find_notes(lambda x: x.lv == self.level())
             difficulty = note.name
 
+        checked = getattr(music, "check", [])
+        checked.append(difficulty)
+        setattr(music, "check", checked)
         return SDVXNoteInfo(music, difficulty, note_type, is_trapped, is_individual, individual_info)
 
 
