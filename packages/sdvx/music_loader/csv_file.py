@@ -27,6 +27,6 @@ class CSVFileSDVXMusicLoader(SDVXMusicLoader):
         [_, genres, name, author, _, _, _, _, _] = records[0]
         for r in records:
             [_, _, _, _, diff_name, level, image, illustrated, effected] = r
-            difficulties.append(SDVXNote(name, diff_name, level, image, illustrated, effected))
+            difficulties.append(SDVXNote(diff_name, int(level), image, illustrated, effected))
 
         return SDVXMusic(genres.split(','), name, author, difficulties)

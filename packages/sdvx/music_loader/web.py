@@ -107,7 +107,6 @@ class WebSDVXMusicLoader(SDVXMusicLoader):
         [name] = diff.attrs['class']
         [image] = parse_qs(urlparse(cat.select_one('img').attrs['src']).query)['img']
         return SDVXNote(
-            music_name,
             name,
             int(diff.text),
             image,

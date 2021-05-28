@@ -14,4 +14,4 @@ class SDVXDifficultyTableLoader(ABC):
         raise NotImplemented("let's impl!!")
 
     def load(self) -> SDVXDifficultyTable:
-        return SDVXDifficultyTable(self.level(), self.parse_classes())
+        return SDVXDifficultyTable(self.level(), self.parse_classes(), [])

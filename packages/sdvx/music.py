@@ -9,16 +9,11 @@ import requests
 
 @dataclass
 class SDVXNote:
-    music_name: str
     name: str
     lv: int
     image_name: str
     illustrated_by: str
     effected_by: str
-
-    @cached_property
-    def hash_id(self) -> str:
-        return hashlib.md5(f"{self.music_name}_{self.name}".encode('utf-8')).hexdigest()
 
     @cached_property
     def image_url(self):
@@ -33,10 +28,6 @@ class SDVXNote:
             print(f"downloading...{self.image_name}")
             f.write(requests.get(self.image_url).content)
 
-    def __eq__(self, other):
-        if isinstance(other, SDVXNote):
-            return other.hash_id == self.hash_id
-        return False
 
 @dataclass
 class SDVXMusic:
