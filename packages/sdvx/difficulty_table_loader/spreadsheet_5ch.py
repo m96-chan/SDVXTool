@@ -19,6 +19,28 @@ class SDVX5chDifficultyTableLoader(SDVXDifficultyTableLoader, ABC):
         # check済みの組み合わせを保存
         self._checked = []
 
+    def detect_music(self, search_name:str) -> Optional[SDVXMusic]:
+        # 完全検索優先
+        if music := next((m for m in self._musics if search_name == m.name), None):
+            return music
+        # あいまい検索
+        if music := next((m for m in self._musics if search_name in m.name), None):
+            print(f"[Warn] is that same? {search_name} = {music.name}")
+            return music
+        # ゲシュタルトパターンマッチで探しあてる。
+        matcher_iter = ((
+            difflib.SequenceMatcher(None, search_name, m.name).ratio(), m
+        ) for m in self._musics)
+        matching = [(r, music) for r, music in matcher_iter if r > 0.5]
+        matching.sort(key=lambda x: x[0], reverse=True)
+        if not matching:
+            print(f"[Alert]{search_name} not found!")
+            return None
+        (_, music) = matching[0]
+        print(f"[Warn] is that same? {search_name} = {music.name}")
+        return music
+
+
     def parse_music_cell(self, c: AdvancedReadOnlyCell) -> Optional[SDVXNoteInfo]:
         """
         セルから、曲の情報をパースする
@@ -60,20 +82,9 @@ class SDVX5chDifficultyTableLoader(SDVXDifficultyTableLoader, ABC):
             individual_info = match.group(1)
             base_name = base_name.replace(f"({individual_info})", "")
 
-        music = next((m for m in self._musics if base_name in m.name), None)
+        music = self.detect_music(base_name)
         if not music:
-            # ゲシュタルトパターンマッチで探しあてる。
-            matcher_iter = ((
-                difflib.SequenceMatcher(None, base_name, m.name).ratio(), m
-            ) for m in self._musics)
-            matching = [(r, music) for r, music in matcher_iter if r > 0.5]
-            matching.sort(key=lambda x: x[0], reverse=True)
-            if not matching:
-                print(f"[Alert]{base_name} not found!")
-                return None
-            (_, music) = matching[0]
-            print(f"[Warn] is that same? {base_name} = {music.name}")
-
+            return None
         if not difficulty:
             [note] = music.find_notes(lambda x: x.lv == self.level())
             difficulty = note.name
@@ -82,6 +93,11 @@ class SDVX5chDifficultyTableLoader(SDVXDifficultyTableLoader, ABC):
         checked.append(difficulty)
         setattr(music, "check", checked)
         return SDVXNoteInfo(music, difficulty, note_type, is_trapped, is_individual, individual_info)
+
+    def check_unregistered(self) -> list[SDVXNoteInfo]:
+        unregistered_music = (m for m in self._musics if not hasattr(m, "check"))
+        unregistered_note_info = [SDVXNoteInfo(m, n.name) for m in unregistered_music for n in m.notes if n.lv == self.level()]
+        return unregistered_note_info
 
 
 class SDVX5chLv17DifficultyTableLoader(SDVX5chDifficultyTableLoader):
