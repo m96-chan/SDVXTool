@@ -1,0 +1,185 @@
+<html lang="ja">
+<head>
+    <title>Lv17難易度表</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW"
+            crossorigin="anonymous"></script>
+    <script>
+        let table = null;
+        loadJson = async (url) => {
+            try {
+                const response = await fetch(url);
+                const data = await response.text();
+                return JSON.parse(data);
+            } catch (e) {
+                console.error(e);
+            }
+        };
+        createNoteElements = (n) => {
+            //console.log(n)
+            const noteLink = document.createElement('a');
+            noteLink.href = "javascript:void(0);"
+            noteLink.onclick = () => {
+                const title = document.getElementById('musicNameTitle');
+                title.innerText = n.name
+                const jacket = document.getElementById('musicJacket');
+                jacket.src = `images/${n.image}.jpg`;
+                jacket.alt = n.name
+                const name = document.getElementById('musicNameText');
+                name.innerText = n.name
+                const author = document.getElementById('musicAuthorText');
+                author.innerText = n.author
+                const difficulty = document.getElementById('noteDifficulty');
+                difficulty.innerText = n.difficulty.toUpperCase();
+                switch (n.difficulty) {
+                    case "nov":
+                        difficulty.style.backgroundColor = "#5a49fb"
+                        break;
+                    case "adv":
+                        difficulty.style.backgroundColor = "#fbb649"
+                        break;
+                    case "exh":
+                        difficulty.style.backgroundColor = "#fb494c"
+                        break;
+                    case "mxm":
+                        difficulty.style.backgroundColor = "#acacac"
+                        break;
+                    case "inf":
+                        difficulty.style.backgroundColor = "#ee65e5"
+                        break;
+                    case "grv":
+                        difficulty.style.backgroundColor = "#fb8f49"
+                        break;
+                    case "hvn":
+                        difficulty.style.backgroundColor = "#49c9fb"
+                        break;
+                    case "vvd":
+                        difficulty.style.backgroundColor = "#ff59cd"
+                        break;
+                }
+                const effectBy = document.getElementById('noteEffectBy');
+                effectBy.innerText = n.effected_by
+                const noteChip = document.getElementById('noteChip')
+                noteChip.style.display = n.note_type === "CHIP" ? "" : "none"
+                const noteBasePower = document.getElementById('noteBasePower')
+                noteBasePower.style.display = n.note_type === "BASE_POWER" ? "" : "none"
+                const noteKnobs = document.getElementById('noteKnobs')
+                noteKnobs.style.display = n.note_type === "KNOBS" ? "" : "none"
+                const noteTrapped = document.getElementById('noteTrapped')
+                noteTrapped.style.display = n.trapped ? "" : "none";
+                const noteIndividual = document.getElementById('noteIndividual');
+                noteIndividual.style.display = n.individual ? "" : "none";
+                const noteIndividualInfo = document.getElementById('noteIndividualInfo');
+                noteIndividualInfo.style.display = n.individual_info ? "" : "none";
+                noteIndividualInfo.innerText = n.individual_info ? n.individual_info : "";
+                new bootstrap.Modal(document.getElementById('musicModal')).toggle();
+            };
+            const noteImage = document.createElement('img');
+            noteImage.src = `images/${n.image}.jpg`;
+            noteImage.alt = n.name
+            noteImage.style.width = '10%';
+            noteImage.style.borderStyle = "solid";
+            switch (n.note_type) {
+                case "BASE_POWER":
+                    noteImage.style.borderColor = "yellow";
+                    break;
+                case "CHIP":
+                    noteImage.style.borderColor = "blue";
+                    break;
+                case "KNOBS":
+                    noteImage.style.borderColor = "red";
+                    break;
+                default:
+                    noteImage.style.borderColor = "white";
+            }
+            noteLink.appendChild(noteImage)
+            return noteLink
+        }
+
+        onLoad = async () => {
+            table = await loadJson("dist/17.json");
+            //console.log(table);
+            document.getElementById('title').textContent = `Lv${table.level}難易度表`
+            const tblElem = document.getElementById('difficultyTable');
+            for (const [index, c] of table.classes.entries()) {
+                //console.log(c);
+                const rowElem = document.createElement('div');
+                rowElem.className = "row";
+                rowElem.style.backgroundColor = index % 2 ? "aliceblue" : "lavender"
+                // Tier
+                const tierColElem = document.createElement('div');
+                tierColElem.className = "col col-sm-2";
+                tierColElem.innerHTML = `<h1>${c.name}</h1>`;
+                rowElem.appendChild(tierColElem);
+                // 曲画像
+                const musicColElem = document.createElement('div');
+                musicColElem.className = "col";
+                for (const n of c.notes) {
+                    musicColElem.appendChild(createNoteElements(n));
+                }
+                rowElem.appendChild(musicColElem);
+                tblElem.appendChild(rowElem);
+            }
+            if (table.unregistered.length >= 0) {
+                const rowElem = document.createElement('div');
+                rowElem.className = "row";
+                rowElem.style.backgroundColor = "gray"
+                const tierColElem = document.createElement('div');
+                tierColElem.className = "col col-sm-2";
+                tierColElem.innerHTML = `<h1>未分類</h1>`;
+                rowElem.appendChild(tierColElem);
+                const musicColElem = document.createElement('div');
+                musicColElem.className = "col";
+                for (const n of table.unregistered) {
+                    musicColElem.appendChild(createNoteElements(n));
+                }
+                rowElem.appendChild(musicColElem);
+                tblElem.appendChild(rowElem);
+            }
+        };
+    </script>
+</head>
+<body onload="onLoad()">
+<div class="container" id="difficultyTable">
+    <h1 id="title">Loading...</h1>
+</div>
+<div class="modal fade" id="musicModal">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="musicNameTitle"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-sm-6"><img src="" alt="" id="musicJacket"></div>
+                    <div class="col-sm-6" id="musicDetail">
+                        <span id="musicNameText"></span><br/>
+                        <span id="musicAuthorText"></span><br/>
+                        <h5>
+                            <span id="noteDifficulty" class="badge"></span><br/>
+                        </h5>
+                        <span id="noteEffectBy"></span><br/>
+                        <br/>
+                        <h5>
+                            <span class="badge bg-primary text-dark" id="noteChip">鍵盤</span>
+                            <span class="badge bg-warning text-dark" id="noteBasePower">地力</span>
+                            <span class="badge bg-danger" id="noteKnobs">つまみ</span>
+                            <span class="badge bg-secondary" id="noteTrapped">初見殺し</span>
+                            <span class="badge bg-secondary" id="noteIndividual">個人差</span>
+                            <span class="badge bg-info text-dark" id="noteIndividualInfo"></span>
+                        </h5>
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
