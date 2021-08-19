@@ -22,7 +22,7 @@ if __name__ == "__main__":
     if lv:
         option["search_level"] = lv
     if name:
-        option["search_level"] = name
+        option["search_name"] = name
 
     web_loader = WebSDVXMusicLoader(option)
     musics = web_loader.load()
